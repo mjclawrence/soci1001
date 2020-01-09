@@ -1,0 +1,27 @@
+---
+title: "Introducing R"
+author: "ML"
+date: "1/8/2020"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+```
+
+```{r}
+pop_estimates <- get_estimates(geography = "state",
+                               product = "components",
+                               year = 2018,
+                               geometry = TRUE,
+                               shift_geo = TRUE,
+                               output = "wide")
+```
+
+```{r}
+names(pop_estimates) <- tolower(names$pop_estimates)
+
+names(pop_estimates)
+```
+
