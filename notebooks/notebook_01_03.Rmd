@@ -1,10 +1,3 @@
----
-title: "Introducing R"
-author: "ML"
-date: "1/9/2020"
-output: pdf_document
----
-
 ## Getting Started
 
 To begin, copy all the text on this screen. Then open RStudio, and in the "File" menu select "New File" then "R Markdown". Add a title like "SOCI 1001, Week One, Class Three", include your name in the "Author" box, select "PDF" as the Default Output Format, and click Ok. A default markdown file will open. Delete all the text in the default file below the header (everything after line 7) and paste in the text you copied to your clipboard. Make sure that "R Markdown" is selected in the file type drop down menu in the bottom right corner of this pane. Save this file to your desktop.
@@ -109,7 +102,7 @@ First, we need to install two packages. Packages are additional functions that s
 Here's the code to install the package. You only have to install the package once on any computer you use. Once your computer has the package installed, you can load the package with the `library()` function.
 
 ```{r load packages, warning=FALSE, error=FALSE, include=FALSE}
-#install.packages("tidyverse")) # This installs the package
+install.packages("tidyverse")) # This installs the package
 library(tidyverse) # This loads the package
 ```
 
@@ -176,23 +169,13 @@ week_1_3$state[week_1_3$rnaturalinc==max(week_1_3$rnaturalinc)]
 What is the rate of natural increase in this county?
 
 ### REPLACE THIS LINE WITH YOUR CODE
- 
-```{r}
-week_1_3$rnaturalinc[week_1_3$county=="Madison County" & week_1_3$state=="Idaho"]
-```
+
+
 
 Find the county, state, and rate of natural increase for the county with the minimum value for that variable.
 
 ### REPLACE THIS LINE WITH YOUR CODE
 
-```{r}
-week_1_3$county[week_1_3$rnaturalinc==min(week_1_3$rnaturalinc)]
-week_1_3$state[week_1_3$rnaturalinc==min(week_1_3$rnaturalinc)]
-```
-
-```{r}
-week_1_3$rnaturalinc[week_1_3$county=="Covington city" & week_1_3$state=="Virginia"]
-```
 
 
 
@@ -259,53 +242,4 @@ vt_plot_rnaturalinc
 ```
 
 We can make further adjustments to this figure like changing the axis labels, adding a title, moving (or deleting) the legend, etc.
-
-
-```{r}
-vt_plot_rnaturalinc <- ggplot(vermont, aes(x = reorder(county, rnaturalinc), 
-                                           y = rnaturalinc,
-                                           fill = (rnaturalinc>0))) + 
-  geom_col() + coord_flip() +
-  scale_fill_manual(values = c("Red", "Forestgreen")) +
-  guides(fill = FALSE) + 
-  labs(y = "Net Natural Increase\n(Births - Deaths per 1000 Residents)",
-       x = " ",
-       title = "Net Natural Increase Rate Per County In Vermont",
-       subtitle = "US Census Bureau 2018 Population Estimates")
-
-vt_plot_rnaturalinc
-```
-
-
-# EXTRA
-
-```{r}
-library(tidycensus)
-
-pop_geo <- get_estimates(geography = "county",
-                        product = "components",
-                        year = 2018,
-                        geometry = TRUE,
-                        shift_geo = TRUE,
-                        output = "wide")
-
-vt_geo <- filter(pop_geo, grepl(NAME, " Vermont"))
-
-```
-
-```{r}
-map_natural_increase <- ggplot() +
-  geom_sf(data = pop_geo, aes(fill = RNATURALINC, color = RNATURALINC), lwd = 0.1) +
-  geom_sf(data = tidycensus::state_laea, fill = NA, color = "black", lwd = 0.1) +
-  geom_sf(data = tidycensus::county_laea, fill = NA, color = "black", lwd = 0.05) +
-  coord_sf(datum = NA) + scale_fill_viridis_c() + scale_color_viridis_c() +
-  guides(color = FALSE) + 
-  labs(title = "Net Natural Increase Rate Per County",
-       subtitle = "US Census Bureau 2018 Population Estimates",
-       fill = "Natural\nIncrease\nPer 1000\nResidents",
-       caption = "Data acquired with the R tidycensus package | @kyle_e_walker") +
-  theme_minimal()
-
-map_natural_increase
-```
 

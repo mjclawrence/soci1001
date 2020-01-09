@@ -47,7 +47,7 @@ pop_estimates_geo <- pop_estimates_geo %>%
 
 ```{r}
 write.csv(pop_estimates, "../data/week_01_03.csv")
-write.csv(pop_estimates_geo, "../data/week_01_03_geo.csv")
+write.csv(pop_estimates_geo, "../data/week_01_03_geo.rda")
 ```
 
 
@@ -75,7 +75,20 @@ pop_estimates_geo_small <- pop_estimates_geo %>%
   select(county, state, rnaturalinc, geometry)
 ```
 
+```{r}
+pop_estimates$county[pop_estimates$rnaturalinc==max(pop_estimates$rnaturalinc)]
+pop_estimates$state[pop_estimates$rnaturalinc==max(pop_estimates$rnaturalinc)]
+pop_estimates$rnaturalinc[pop_estimates$county=="Madison County" & 
+                            pop_estimates$state=="Idaho"]
+```
 
+
+```{r}
+pop_estimates$county[pop_estimates$rnaturalinc==min(pop_estimates$rnaturalinc)]
+pop_estimates$state[pop_estimates$rnaturalinc==min(pop_estimates$rnaturalinc)]
+pop_estimates$rnaturalinc[pop_estimates$county=="Covington city" & 
+                            pop_estimates$state=="Virginia"]
+```
 
 
 ```{r}
