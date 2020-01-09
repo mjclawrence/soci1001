@@ -1,0 +1,84 @@
+---
+title: "Introducing R"
+author: "ML"
+date: "1/8/2020"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+```
+
+```{r}
+pop_estimates <- get_estimates(geography = "county",
+                               product = "components",
+                               year = 2018,
+                               output = "wide")
+```
+
+
+
+```{r}
+pop_estimates_geo <- get_estimates(geography = "county",
+                               product = "components",
+                               year = 2018,
+                               geometry = TRUE,
+                               shift_geo = TRUE,
+                               output = "wide")
+```
+
+```{r}
+names(pop_estimates) <- tolower(names(pop_estimates))
+names(pop_estimates)
+
+names(pop_estimates_geo) <- tolower(names(pop_estimates_geo))
+names(pop_estimates_geo)
+```
+
+```{r}
+pop_estimates <- pop_estimates %>%
+  separate(name, sep = ", ", c("county", "state"))
+
+pop_estimates_geo <- pop_estimates_geo %>%
+  separate(name, sep = ", ", c("county", "state"))
+```
+
+
+```{r}
+write.csv(pop_estimates, "../data/week_01_03.csv")
+write.csv(pop_estimates_geo, "../data/week_01_03_geo.csv")
+```
+
+
+
+```{r}
+summary(pop_estimates$rnaturalinc)
+```
+
+```{r}
+map_natural_increase <- ggplot() +
+  geom_sf(data = pop_estimates_geo, aes(fill = rnaturalinc, color = rnaturalinc), lwd = 0.1) +
+  geom_sf(data = tidycensus::state_laea, fill = NA, color = "black", lwd = 0.1) +
+  geom_sf(data = tidycensus::county_laea, fill = NA, color = "black", lwd = 0.05) +
+  coord_sf(datum = NA) + scale_fill_viridis_c() + scale_color_viridis_c() +
+  guides(color = FALSE) + 
+  labs(title = "Net Natural Increase Rate Per County",
+       subtitle = "US Census Bureau 2018 Population Estimates",
+       fill = "Natural\nIncrease\nPer 1000\nResidents",
+       caption = "Data acquired with the R tidycensus package | @kyle_e_walker") +
+  theme_minimal()
+```
+
+```{r}
+pop_estimates_geo_small <- pop_estimates_geo %>%
+  select(county, state, rnaturalinc, geometry)
+```
+
+
+
+
+```{r}
+mapview(pop_estimates_geo_small, zcol = "rnaturalinc")
+```
+
