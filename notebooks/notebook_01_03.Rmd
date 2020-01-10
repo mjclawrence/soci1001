@@ -36,9 +36,6 @@ What is 2002 divided by 2?
 
 ### REPLACE THIS LINE WITH YOUR CODE ###
 
-```{r calculator 2}
-2002 / 2
-```
 
 Our course number could be helpful to save so we do not have to calculate it each time we want to reference it. We save a value by creating an object. The syntax for doing so is to name our object first, then use the symbol "<-" to say what value our object takes. Let's call our new object `coursenumber`:
 
@@ -102,7 +99,7 @@ First, we need to install two packages. Packages are additional functions that s
 Here's the code to install the package. You only have to install the package once on any computer you use. Once your computer has the package installed, you can load the package with the `library()` function.
 
 ```{r load packages, warning=FALSE, error=FALSE, include=FALSE}
-install.packages("tidyverse")) # This installs the package
+install.packages("tidyverse") # This installs the package
 library(tidyverse) # This loads the package
 ```
 
@@ -114,7 +111,7 @@ Next we'll get the data. Eventually we'll download data directly from the census
 week_1_3 <- read.csv("https://raw.githubusercontent.com/mjclawrence/soci1001/master/data/week_01_03.csv")
 ```
 
-If the code above executed correctly, you should now see the data frame loaded and saved with the object name you created in the `Environment` panel in the top right quadrant of R Studio. There should be 3142 observations of 16 variables in the data frame named hurricanes.
+If the code above executed correctly, you should now see the data frame loaded and saved with the object name you created in the `Environment` panel in the top right quadrant of R Studio. There should be 3142 observations of 16 variables in the data frame named `week_1_3`.
 
 Click the white arrow to the left of the object name to see all the variables (geoid, county, state, etc.). Click the spreadsheet icon on the far right side of the data name row to open the full data frame. Note that the *variables* are in the columns and the *values* are in the rows, with each row representating a separate *observation* or *case*.
 
