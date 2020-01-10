@@ -109,7 +109,7 @@ First, we need to install two packages. Packages are additional functions that s
 Here's the code to install the package. You only have to install the package once on any computer you use. Once your computer has the package installed, you can load the package with the `library()` function.
 
 ```{r load packages, warning=FALSE, error=FALSE, include=FALSE}
-#install.packages("tidyverse")) # This installs the package
+#install.packages("tidyverse") # This installs the package
 library(tidyverse) # This loads the package
 ```
 
@@ -121,7 +121,7 @@ Next we'll get the data. Eventually we'll download data directly from the census
 week_1_3 <- read.csv("https://raw.githubusercontent.com/mjclawrence/soci1001/master/data/week_01_03.csv")
 ```
 
-If the code above executed correctly, you should now see the data frame loaded and saved with the object name you created in the `Environment` panel in the top right quadrant of R Studio. There should be 3142 observations of 16 variables in the data frame named hurricanes.
+If the code above executed correctly, you should now see the data frame loaded and saved with the object name you created in the `Environment` panel in the top right quadrant of R Studio. There should be 3142 observations of 16 variables in the data frame named week_1_3
 
 Click the white arrow to the left of the object name to see all the variables (geoid, county, state, etc.). Click the spreadsheet icon on the far right side of the data name row to open the full data frame. Note that the *variables* are in the columns and the *values* are in the rows, with each row representating a separate *observation* or *case*.
 
@@ -170,6 +170,8 @@ In this next chunk, we want to pull the value for the `rnaturalinc` variable for
 
 ```{r finding observation with certain value of a variable}
 week_1_3$county[week_1_3$rnaturalinc==max(week_1_3$rnaturalinc)]
+
+
 week_1_3$state[week_1_3$rnaturalinc==max(week_1_3$rnaturalinc)]
 ```
 
@@ -178,7 +180,8 @@ What is the rate of natural increase in this county?
 ### REPLACE THIS LINE WITH YOUR CODE
  
 ```{r}
-week_1_3$rnaturalinc[week_1_3$county=="Madison County" & week_1_3$state=="Idaho"]
+week_1_3$rnaturalinc[week_1_3$county=="Madison County" &
+                       week_1_3$state=="Idaho"]
 ```
 
 Find the county, state, and rate of natural increase for the county with the minimum value for that variable.
@@ -206,6 +209,11 @@ vermont <- week_1_3 %>%
 ```
 
 How many observations are in this dataframe? What is the distribution of `rnaturalinc` across Vermont counties? Which county in Vermont has the highest rate of natural increase?
+
+```{r}
+summary(vermont$rnaturalinc)
+```
+
 
 
 ## Introducing Graphics
@@ -235,7 +243,7 @@ Let's fix two things. First, let's order the counties by value of `rnaturalinc` 
 ```{r}
 vt_plot_rnaturalinc <- ggplot(vermont, aes(x = reorder(county, rnaturalinc), y = rnaturalinc))
 
-vt_plot_rnaturalinc + geom_point() + coord_flip()
+vt_plot_rnaturalinc + geom_point() + coord_flip() + geom_hline(yintercept = 0)
 ```
 
 Let's look at one more geometric shape. Use `geom_col()` when you want a bar plot and have x and y variables. If you only have an x variable, use `geom_bar()`.
@@ -276,6 +284,23 @@ vt_plot_rnaturalinc <- ggplot(vermont, aes(x = reorder(county, rnaturalinc),
 vt_plot_rnaturalinc
 ```
 
+
+```{r}
+vt_plot_rnaturalinc <- ggplot(vermont, aes(x = reorder(county, rnaturalinc), 
+                                           y = rnaturalinc,
+                                           fill = rnaturalinc,
+                                           label = round(rnaturalinc, 3))) + 
+  geom_col() + coord_flip() +
+  guides(fill = FALSE) + 
+  scale_fill_viridis_c() +
+  labs(y = "Net Natural Increase\n(Births - Deaths per 1000 Residents)",
+       x = " ",
+       title = "Net Natural Increase Rate Per County In Vermont",
+       subtitle = "US Census Bureau 2018 Population Estimates") +
+  geom_text(hjust = .5)
+
+vt_plot_rnaturalinc
+```
 
 # EXTRA
 
