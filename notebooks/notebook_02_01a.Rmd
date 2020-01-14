@@ -1,0 +1,188 @@
+## Getting Started
+
+To begin, copy all the text on this screen. Then open RStudio, and in the "File" menu select "New File" then "R Markdown". Add a title like "SOCI 1001, Week Two, Class One", include your name in the "Author" box, select "PDF" as the Default Output Format, and click Ok. A default markdown file will open. Delete all the text in the default file below the header (everything after line 7) and paste in the text you copied to your clipboard. Make sure that "R Markdown" is selected in the file type drop down menu in the bottom right corner of this pane. Save this file to your desktop.
+
+## Load packages and keys
+
+We will be using the `tidycensus` package extensively this month. We'll also use the `pander` package for making publication-ready tables. Let's install them.
+
+```{r}
+install.packages(c("tidycensus", "pander"))
+```
+
+Now let's load the `tidycensus` and `pander` packages as well as the `tidyverse` package we installed last class. Turn off the warnings, errors, and messages so they don't clog up the screen (or screw up the attempts to knit the file).
+
+```{r, warning = FALSE, error = FALSE, message = FALSE}
+library(tidyverse)
+library(tidycensus)
+library(pander)
+```
+
+You each have a Census API key. Let's install them. We'll save our keys to R's memory so you don't have to install them again.
+
+```{r}
+census_api_key("YOUR API KEY HERE", 
+               overwrite = TRUE, install = TRUE)
+# First time, relead your environment so you can use the key without restarting R.
+readRenviron("~/.Renviron")
+```
+
+You can check your API key with this code:
+
+```{r}
+Sys.getenv("CENSUS_API_KEY")
+```
+
+## Introducing tidycensus
+
+There are three main functions in the `tidycensus` package:
+
+- `get_estimates()` gets data from the US Census Bureau Population Estimates
+
+- `get_acs()` gets data from the American Community Survey
+
+- `get_decennial` gets data from decennial census
+
+Let's start with the `get_estimates` function. In this chunk, we will create a new data frame called `race_df` that pulls estimates of the national population for each race category. The `breakdown_labels = TRUE` command says we want the actual names of each race category rather than the variable names.
+
+```{r}
+race_df <- get_estimates(geography = "us",
+                         year = 2018, # the most recent year available
+                         product = "characteristics",
+                         breakdown = c("RACE"),
+                         breakdown_labels = TRUE)
+```
+
+What are the variables? What are the values?
+
+Let's clean up the names of the variables by making them all lowercase.
+
+```{r}
+names(race_df) <- tolower(names(race_df))
+```
+
+There are more race categories than we need. For example, we don't want the "All races" number and we don't want any of the "in combination" numbers. Let's filter them out. We can filter out "All races" by its value. We will use the `str_detect` function to filter out any observations where the *string* "in combination" is *detected* in the `race` column.
+
+```{r}
+race_df <- race_df %>%
+  filter(race != "All races") %>% # != means "does not equal"
+  filter(!str_detect(race, "in combination"))
+```
+
+What are the race category names that are left in our dataframe?
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+
+The last thing to clean up is some of the very long labels in the race variable. We do this by asserting that the variable is a factor variable and changing its labels. The labels have to be in the same order as the order in which the labels are currently stored (which is alphabetical by default).
+
+The `mutate()` function creates new variables. In this case, we are creating a new factor variable called `race_abb` which takes abbreviations based on the existing character variable called `race`.
+
+```{r}
+race_df <- race_df %>%
+  mutate(race_abb = factor(race,
+                       labels = c("AIAN alone", 
+                                  "Asian alone",
+                                  "Black alone",
+                                  "NHPI alone",
+                                  "Two or more races",
+                                  "White alone")))
+```
+
+## Describing Race
+
+Let's create a simple table with the estimated population and the proportion of the population in each race category. We will create a new variable (with `mutate()`) called `prop` that includes the proportions.
+
+```{r}
+race_table <- race_df %>%
+  select(race_abb, value) %>% # Use select to choose columns
+  mutate(prop = round((value / sum(value)),3)) # Create proportions
+
+race_table
+```
+
+Use the table we just made to create a plot showing the estimated population in each race category.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+A simple geom_col works here but it is not that informative. A table is probably preferable to a figure to summarize this data. We'll clean up the table by adding commas to the population counts (with `format`) and by changing the column names (with `colnames`; there is also a `rownames` function) before feeding the cleaned up table into `pander()`. 
+
+```{r}
+race_table$value <- format(race_table$value, 
+                           big.mark = ",", 
+                           trim = TRUE)
+
+colnames(race_table) <- c("Race", "Estimated Count", 
+                          "Proportion of Population")
+
+pander(race_table,
+       caption = "Counts And Proportions By Race") # adds table title
+```
+
+
+## Plots By Race And Age
+
+Now we will get national estimates for each race/age combination. We ask for multiple breakdowns by listing both of them. Use `AGEGROUP` for age. Other options are `SEX` and `HISP` (for Hispanic).
+
+```{r}
+race_age_df <- get_estimates(geography = "us",
+                          product = "characteristics",
+                          breakdown = c("AGEGROUP", "RACE"),
+                          breakdown_labels = TRUE)
+```
+
+Clean up the data. Make the variable names lowercase. Filter out the "in combination" race categories and the "All races" category. And change the long race labels.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+Take a look at all the available age groups.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+
+There are a few different breakouts here. There are five year age groups, more aggregated categories (Under 18 years, 18-24, 25-44, 45-64, 65 years and over), and summary categories (all ages and median age). 
+
+Create a new dataframe called `median_df` that only has the `Median age` categories.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+
+Make a column plot showing the median age by race category. Order the races by lowest to highest median age.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+
+
+## Using Age Categories
+
+Let's return to the `race_age_df` data frame. We still have all the age categories in this data frame but we only want the big categories. Use filter to keep the ones we want.
+
+```{r}
+race_agecat_df <- race_age_df %>%
+  filter(race_abb != "All races") %>%
+  filter(agegroup == "Under 18 years" |
+           agegroup == "18 to 24 years" |
+           agegroup == "25 to 44 years" |
+           agegroup == "45 to 64 years" |
+           agegroup == "65 years and over") %>%
+  droplevels() # deletes the labels for the age categories we are not using
+```
+
+We want the proportion in each age group for each race category. Since we'll use those proportions more than once, it makes sense to create a new variable (using `mutate()`) that takes the value of the proportion. We want this for each race category so we will `group_by()` the race variable before creating the new variable.
+
+```{r}
+race_agecat_df <- race_agecat_df %>%
+  group_by(race_abb) %>%
+  mutate(prop = value / sum(value))
+```
+
+Finally, create a figure that includes a column for each race category showing the proportion in each age category. We'll add the `fill = ` option to the aesthetic map, and add `position = "fill"` to the geom_col() layer to get a stacked bar plot.
+
+```{r}
+age_categories_plot <- ggplot(race_agecat_df,
+                              aes(x = race_abb, 
+                                  y = prop,
+                                  fill = agegroup))
+                              
+age_categories_plot + geom_col(position = "fill")
+```
