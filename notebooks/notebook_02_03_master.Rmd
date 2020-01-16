@@ -1,0 +1,168 @@
+---
+title: "Untitled"
+author: "ML"
+date: "1/16/2020"
+output: pdf_document
+---
+
+## Getting Started
+
+Load the usual packages.
+
+```{r, warning = FALSE, error = FALSE, message = FALSE}
+library(tidyverse)
+library(tidycensus)
+library(pander)
+```
+
+So far we have used `tidycensus` to retrive data using "us", "state", and "county" as the geographic level. But the package allows for many other options as well. Here are some of them:
+
+- region
+
+- division
+
+- tract (geometry shape files available)
+
+- block group (geometry shape files available)
+
+- place
+
+- metropolitan statistical area/micropolitan statistical area
+
+- combined statistical area
+
+- urban area
+
+- school district (elementary)
+
+- school district (secondary)
+
+- school district (unified)
+
+- public use microdata area
+
+- zip code tabulation area
+
+- state legislative district (upper chamber)
+
+- state legislative district (lower chamber)
+
+
+## Metro Areas
+
+As Manduca (2019) describes, metro areas are valuable geographic levels when analyzing inequality. Let's get the gini for all of them from the 2018 1-year ACS.
+
+```{r}
+gini_metro <- get_acs(geography = "metropolitan statistical area/micropolitan statistical area",
+                       year = 2018,
+                       survey = "acs1",
+                       variables = c(gini =      ))
+```
+
+```{r}
+gini_metro <- get_acs(geography = "metropolitan statistical area/micropolitan statistical area",
+                       year = 2018,
+                       survey = "acs1",
+                       variables = c(gini = "B19083_001"))
+```
+
+Let's clean up the data. After changing the names to lower case, we want to keep only the metro areas (so get rid of the micro areas).
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+```{r}
+names(gini_metro) <- tolower(names(gini_metro))
+
+gini_metro <- gini_metro %>%
+  filter(!str_detect(name, "Micro Area"))
+```
+
+
+Now let's create a new data frame that only has the names and gini values for the twenty metro areas with the higest gini indices.
+
+```{r}
+top_gini <- gini_metro %>%
+  arrange(desc(estimate)) %>%
+  top_n(20) %>%
+  select(name, estimate)
+```
+
+Create a new data frame that only has the names and gini values for the ten metro areas with the lowest gini indicies.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+```{r}
+low_gini <- gini_metro %>%
+  arrange(estimate) %>%
+  top_n(10) %>%
+  select(name, estimate)
+```
+
+
+
+## Poverty
+
+What variable do we need to calculate the poverty rate by state?
+
+```{r}
+poverty <- get_acs(geography = "state",
+                   year = 2018,
+                   survey = "acs1",
+                   variables = c(total_pop = "B17001_001",
+                                 total_pov = "B17001_002",
+                                 white_pop = "B17001A_001",
+                                 white_pov = "B17001A_002",
+                                 black_pop = "B17001B_001",
+                                 black_pov = "B17001B_002",
+                                 aian_pop = "B17001C_001",
+                                 aian_pov = "B17001C_002",
+                                 asian_pop = "B17001D_001",
+                                 asian_pov = "B17001D_002",
+                                 nhpi_pop = "B17001E_001",
+                                 nhpi_pov = "B17001E_002",
+                                 other_pop = "B17001F_001",
+                                 other_pov = "B17001F_002",
+                                 twoplus_pop = "B17001G_001",
+                                 twoplus_pov = "B17001G_002",
+                                 whitenothisp_pop = "B17001H_001",
+                                 whitenothisp_pov = "B17001H_002",
+                                 hisp_pop = "B17001I_001",
+                                 hisp_pov = "B17001I_002"),
+                   geometry = TRUE,
+                   shift_geo = TRUE)
+```
+
+Clean up the data
+
+```{r}
+names(poverty) <- tolower(names(poverty))
+```
+
+We can use the `separate()` funciton to break up our `variable` column into two separate columns. 
+
+```{r}
+poverty <- poverty %>%
+  separate(variable, c("race", "number"), sep = c("_"))
+```
+
+Now calculate the poverty rate for each race in each state.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+```{r}
+poverty <- poverty %>%
+  group_by(name, race) %>%
+  mutate(pov_rate = estimate / sum(estimate)) %>%
+  filter(number=="pov") %>%
+  filter(race != "total")
+```
+
+We know how to make one map. But we want a separate map for each race. In ggplot language, we want to "facet" the maps by the values of our race column.
+
+```{r}
+pov_race_map <- ggplot(poverty, aes(fill = pov_rate)) + 
+  geom_sf() + coord_sf(datum = NA) + scale_fill_viridis_c() +
+  facet_wrap(~race)
+
+pov_race_map
+```
