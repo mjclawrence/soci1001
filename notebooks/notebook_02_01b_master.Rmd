@@ -208,7 +208,7 @@ There's a lot going on here. Let's just look at counties in the state of New Yor
 
 ```{r}
 one_state <- hispanic_geo_summary %>%
-  filter(str_detect(name, ", New York"))
+  filter(str_detect(name, ", Massachusetts"))
 
 ggplot(one_state, aes(fill = variable)) + geom_sf() + coord_sf(datum = NA)
 ```
