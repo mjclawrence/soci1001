@@ -56,13 +56,6 @@ As Manduca (2019) describes, metro areas are valuable geographic levels when ana
 gini_metro <- get_acs(geography = "metropolitan statistical area/micropolitan statistical area",
                        year = 2018,
                        survey = "acs1",
-                       variables = c(gini =      ))
-```
-
-```{r}
-gini_metro <- get_acs(geography = "metropolitan statistical area/micropolitan statistical area",
-                       year = 2018,
-                       survey = "acs1",
                        variables = c(gini = "B19083_001"))
 ```
 
@@ -82,9 +75,9 @@ Now let's create a new data frame that only has the names and gini values for th
 
 ```{r}
 top_gini <- gini_metro %>%
+  select(name, estimate) %>%
   arrange(desc(estimate)) %>%
-  top_n(20) %>%
-  select(name, estimate)
+  head(20)
 ```
 
 Create a new data frame that only has the names and gini values for the ten metro areas with the lowest gini indicies.
@@ -94,8 +87,12 @@ Create a new data frame that only has the names and gini values for the ten metr
 ```{r}
 low_gini <- gini_metro %>%
   arrange(estimate) %>%
-  top_n(10) %>%
-  select(name, estimate)
+  select(name, estimate) %>%
+  head(10)
+```
+
+```{r}
+pander(low_gini)
 ```
 
 
@@ -152,7 +149,7 @@ Now calculate the poverty rate for each race in each state.
 ```{r}
 poverty <- poverty %>%
   group_by(name, race) %>%
-  mutate(pov_rate = estimate / sum(estimate)) %>%
+  mutate(pov_rate = estimate / estimate[number=="pop"]) %>%
   filter(number=="pov") %>%
   filter(race != "total")
 ```
