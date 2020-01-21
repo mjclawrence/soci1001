@@ -77,7 +77,7 @@ Now let's create a new data frame that only has the names and gini values for th
 top_gini <- gini_metro %>%
   select(name, estimate) %>%
   arrange(desc(estimate)) %>%
-  head(20)
+  top_n(20)
 ```
 
 Create a new data frame that only has the names and gini values for the ten metro areas with the lowest gini indicies.
@@ -88,7 +88,7 @@ Create a new data frame that only has the names and gini values for the ten metr
 low_gini <- gini_metro %>%
   arrange(estimate) %>%
   select(name, estimate) %>%
-  head(10)
+  top_n(-10)
 ```
 
 ```{r}
@@ -104,7 +104,7 @@ What variable do we need to calculate the poverty rate by state?
 ```{r}
 poverty <- get_acs(geography = "state",
                    year = 2018,
-                   survey = "acs1",
+                   survey = "acs5",
                    variables = c(total_pop = "B17001_001",
                                  total_pov = "B17001_002",
                                  white_pop = "B17001A_001",

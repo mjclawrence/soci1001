@@ -1,0 +1,151 @@
+# Set Up
+
+Load the usual packages
+
+```{r, error = FALSE, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(tidycensus)
+library(pander)
+```
+
+Load dataset of all county characteristics from [Opportunity Insights](https://opportunityinsights.org) 
+
+```{r}
+cty_characteristics <-read.csv("https://opportunityinsights.org/wp-content/uploads/2018/12/cty_covariates.csv")
+```
+
+Load the dataset of college completion rates from the [Opportunity Atlas](https://opportunityatlas.org)
+
+```{r}
+college <- read.csv("https://opportunityatlas.org/src/data/downloadFiles/cty_coll_allSubgroups.csv")
+```
+
+There are 218 variables in the `college` data frame. The first two columns are descriptives: the county fips code and the county name. The remaining 216 columns are the estimate for the selected outcome (the college completion rate in this example) for each possible category of race (`r`), gender (`g`), and percentile of parent's income (`p`). There are two measures for each combination: one for the full sample and one for the "late born" in the sample (identified with variable names ending in `_l`).
+
+# Data Clean Up
+
+The first step to clean up this file is to reshape it from wide data to long data. We can do this using the `gather()` function. The `gather()` function will take the chosen column names and make them value names in a new column, and will take the existing estimates in the chosen columns and make them values in a separate new column. 
+
+In the chunk below, we are creating a new data frame called `college_long`. We don't change the values of columns 1 and 2, but will create multiple rows for each county. We are taking columns 3 through 218, making each of those column names the value in a new column called `outcome`), and taking the existing values of columns 3 through 218 and making each of them the value in a new column called `estimate`.
+
+```{r}
+college_long <- college %>%
+  gather(outcome, estimate, 3:218)
+```
+
+We started with 218 columns. We end up with 216 `rows` for each county and state combination.
+
+Each variable has the same structure. We can take advantage of this structure to separate the variable into multiple columns: one for percentile, one for gender, and one for race.
+
+```{r}
+college_long <- college_long %>%
+  filter(!str_detect(outcome, "_l")) %>% # drop the late subsample
+  separate(outcome, c("outcome", "pctle"), sep = c("_p")) %>%
+  separate(outcome, c("outcome", "gender"), sep = c("_g")) %>%
+  separate(outcome, c("outcome", "race"), sep = c("_r"))
+```
+
+Let's clean up the fips codes to make it easier to eventually merge them with shapefiles. 
+
+```{r}
+college_long <- college_long %>%
+  mutate(cty = parse_number(as.character(cty))) %>% # keep numbers in fips code
+  rename(GEOID = cty) %>% # new name = old name
+  mutate(GEOID = sprintf("%05d", as.numeric(GEOID))) %>% # adds leading zeroes as necessary to make all fips codes 5 digits
+  mutate(GEOID = as.character(GEOID)) # changes fips codes to characters
+```
+
+## Merging
+
+The `tidycensus` package includes functions to get geometric shapefiles for states and counties. Let's get the county shapefiles.
+
+```{r}
+county_maps <- county_laea
+#state_maps <- state_laea # This works too
+```
+
+The `county_maps` data frame and the `college_long` data frame both have an identifer variable named `GEOID`. Now we can use that variable to merge the shapefiles with the college outcomes data. We use the `left_join()` function here and list `county_maps` first. That will make the shape files data frame the master data frame; if there are counties in `college_long` that are not in `county_maps` they will be dropped.
+
+```{r}
+college_geo <- left_join(county_maps, college_long, by = "GEOID")
+```
+
+
+# College Completion Rates By Parent's Income
+
+Let's look at how college completion rates vary by parent's income across counties. In this analysis, we want each pctle value, but only the "pooled" values for race and gender. We'll also clean up the pctle variable by reordering the levels and changing the labels.
+
+```{r}
+college_maps <- college_geo %>%
+  filter(race == "P", gender == "P", pctle!="NA") %>%
+    mutate(pctle = factor(pctle,
+                        levels = c("1", "25", "50", "75", "100", "all"),
+                        labels = c("Lowest Percentile", "25th Percentile",
+                                   "50th Percentile", "75th Percentile", 
+                                   "Highest Percentile", "Overall")))
+```
+
+Now it's time to make our map. What is our fill variable? How do we get a separate map for each value of pctle category?
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+
+# Income Quintiles
+
+Let's try another example. Each county has a mean household income for kids who grew up at each percentile. In this example, we'll make a plot showing how those incomes vary across counties.
+
+Start by loading the income data from the Opportunity Atlas. Put it in a dataframe called `hhincome`.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+And clean up the income data.
+
+```{r}
+hhincome_long <- hhincome %>%
+  gather(outcome, estimate, 3:218) %>% # from wide to long
+  filter(!str_detect(outcome, "_l")) %>% # drop the late subsample
+  separate(outcome, c("outcome", "pctle"), sep = c("_p")) %>%
+  separate(outcome, c("outcome", "gender"), sep = c("_g")) %>%
+  separate(outcome, c("outcome", "race"), sep = c("_r")) %>%
+  mutate(cty = parse_number(as.character(cty))) %>% # keep numbers in fips code
+  rename(GEOID = cty) %>% # new name = old name
+  mutate(GEOID = sprintf("%05d", as.numeric(GEOID))) %>% # adds leading zeroes as necessary to make all fips codes 5 digits
+  mutate(GEOID = as.character(GEOID)) # changes fips codes to characters
+```
+
+Merge the income data and shapefiles into a data frame called `hhincome_geo`.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+Clean up the income percentiles in a data frame called `hhincome_maps`.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+Make the map
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+
+That doesn't look great. Why? Let's assign each county's average income to its quintile.
+
+Start by finding the quintiles.
+
+```{r}
+quantile(hhincome$kfr_rP_gP_pall, probs = c(.2, .4, .6, .8, 1), na.rm=TRUE)
+```
+
+Then use the `cut()` function to make the breaks in the data.
+
+```{r}
+hhincome_maps <- hhincome_maps %>%
+  mutate(quintile = cut(estimate, 
+                        breaks = c(0, 36662, 40925, 45704.6, 51331, Inf)),
+         quintile = factor(quintile,
+                           labels = c("Lowest", "2", 
+                                      "3", "4", "Highest"))) %>%
+  filter(!is.na(quintile))
+```
+
+Try the map again using `quintile` as the fill variable.
+
+### REPLACE THIS LINE WITH YOUR CODE
