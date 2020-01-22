@@ -1,0 +1,260 @@
+---
+title: "Untitled"
+author: "ML"
+date: "1/21/2020"
+output: pdf_document
+---
+
+## Set Up
+
+Load the packages
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+library(pander)
+```
+
+Load the data
+
+```{r}
+county_mobility <- read.csv("https://raw.githubusercontent.com/mjclawrence/soci1001/master/data/county_mobility.csv")
+```
+
+## Correlations
+
+Most of our engagement with data so far has focused on disributions of one variable. It can also be helpful to know how two (or more) variables tend to move together. Correlation coefficients measure such associations or relationships between variables.
+
+Let's start with a basic correlation between `absolute_upward_mobility` and `social_capital_90`. We will use the `cor()` function, and will need to add the `use = "complete"` option since some counties may be missing values on one or both of these measures.
+
+```{r}
+cor(county_mobility$social_capital_90,
+    county_mobility$absolute_upward_mobility,
+    use = "complete")
+```
+
+How would you describe this correlation?
+
+The assocation between social capital and mobility may be easier to understand if we plot each county's social capital value (on the x axis) against each county's mobility value (on the y axis).
+
+```{r}
+ggplot(county_mobility, aes(x = social_capital_90,
+                            y = absolute_upward_mobility)) + 
+  geom_point() +  # for a scatterplot
+  geom_smooth(method = "lm") # for a line of best fit
+```
+
+Find the correlation between mobility and `singleparent_share2000`. Make a scatterplot showing the association.
+
+```{r}
+cor(county_mobility$singleparent_share2000,
+    county_mobility$absolute_upward_mobility,
+    use = "complete")
+```
+
+
+```{r, warning = FALSE, error = FALSE}
+ggplot(county_mobility, aes(x = social_capital_90,
+                            y = absolute_upward_mobility)) + 
+  geom_point()
+```
+
+How could we see this plot separately for metro, micro, and rural areas (categories of the `type`) variable?
+
+```{r}
+county_mobility %>%
+  ggplot(aes(x = social_capital_90, y = absolute_upward_mobility)) +
+  geom_point() + facet_grid(type~.)
+```
+
+We might be interested in seeing the correlations between mobility and the variables considered the "big five" predictors of mobility. How can we see summarize all those correlations together? The `GGally` package has some neat tools to help visualize correlations. Install and load the package.
+
+```{r}
+#install.packages("GGally)
+library(GGally)
+```
+
+We want to use the big five variables, so let's pull their names into a vector so we can reference them as a group.
+
+```{r}
+big_five_vars <- c("social_capital_90", "singleparent_share2000",
+              "gini", "traveltime15_2010",
+              "share_black2000")
+```
+
+And create a new data frame that has the mobility variable and the big five variables.
+
+```{r}
+big_five_correlations <- county_mobility %>%
+  select(absolute_upward_mobility, big_five_vars)
+```
+
+We can use the `ggcorr()` funcion from the `GGally` package to visualize the correlations among all these variables.
+
+```{r}
+ggcorr(big_five_correlations, # the data frame
+       palette = "RdBu", # the color palette; this is the default
+       label = TRUE, # show the correlation coefficient
+       label_round = 2, # round the coefficient to two places
+       hjust = .85, # move the variable labels away from the plot
+       layout.exp = 2, # expand the layout of the plot
+       method = c("pairwise", "pearson")) # type of correlations we want
+
+```
+
+How do you interpret these coefficients?
+
+How can we look at this separately by type of county?
+
+### REPLACE THIS LINE WITH YOUR CODE
+ 
+```{r}
+county_mobility %>%
+  select(absolute_upward_mobility, big_five_vars, type) %>%
+  filter(type == "rural") %>%
+  ggcorr(palette = "RdBu", # the color palette; this is the default
+       label = TRUE, # show the correlation coefficient
+       label_round = 2, # round the coefficient to two places
+       hjust = .85, # move the variable labels away from the plot
+       layout.exp = 2, # expand the layout of the plot
+       method = c("pairwise", "pearson")) # type of correlations we want
+```
+
+Here are the individual variables that make up the 1990 social capital index (used by Weber et al). There are descriptions of the individual variables [here.](https://aese.psu.edu/nercrd/community/social-capital-resources/social-capital-variables-for-1990-1997-and-2005/data-dictionary-sk-variables)
+
+```{r}
+social_capital_vars <- c("religious_2014", "civic_2014", "business_2014",
+                    "political2014", "professional2014", "labor2014",
+                    "bowling2014", "recreational2014", "golf2014",
+                    "sports2014", "pop2014", "assn2014", "pvote2012",
+                    "respon2010", "nccs2014", "social_capital_90",
+                    "sk2014")
+```
+
+How are they correlated with mobility?
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+```{r}
+county_mobility %>%
+  select(absolute_upward_mobility, social_capital_vars, type) %>%
+  ggcorr(palette = "RdBu", 
+         label = TRUE,
+         label_round = 1,
+         hjust = 1, 
+         layout.exp = 3,
+         method = c("pairwise", "pearson"),
+         legend.position = "bottom")
+```
+
+Our data frame has many other variables we have not looked at yet. Explore them in groups by type of county. What's the strongest positive correlation? What's the strongest negative correlation?
+
+```{r}
+county_mobility %>%
+  select(4:49, -big_five_vars, -social_capital_vars) %>%
+  ggcorr(palette = "RdBu", 
+         label = TRUE,
+         label_round = 1,
+         hjust = 1, 
+         layout.exp = 3,
+         method = c("pairwise", "pearson"),
+         label_size = 2) # This is new; default is 4
+```
+
+
+## Regression
+
+How can we do simple linear regressions? To see how regression works, find the average mobility value for each county type.
+
+```{r}
+avg_mobility <- county_mobility %>%
+  group_by(type) %>%
+  summarize(mean_mobility = mean(absolute_upward_mobility, na.rm=TRUE))
+
+avg_mobility
+```
+
+Regression will give us the same exact information. We'll save the results from our models in an object. We'll use the `lm()` function for our linear models. And the basic syntax is `y ~ x, data = `.
+
+Regress mobility on county type.
+
+```{r}
+model1 <- lm(absolute_upward_mobility ~ type, 
+             data = county_mobility,
+             na.action = na.exclude) # This is necessary to get predictions
+
+summary(model1)
+```
+
+The intercept estimate is the average mobility in metro areas (the "reference category"). The micro estimate is the amount by which average mobility is higher in micro areas than metro areas. The rural estimate is the amount by which average mobility is higher in rural areas than metro areas. The stars on the far right of the table tell us that these differences are statistically significant.
+
+Are there still differences in average mobility across these types if we `control for` the proportion of children growing up in each commuting zone end up leaving as adults (the `leave_cz` variable)?
+
+We can control for additional variables by adding them to our model.
+
+```{r}
+model2 <- lm(absolute_upward_mobility ~ type + leave_cz, 
+             data = county_mobility,
+             na.action = na.exclude) # This is necessary to get predictions
+```
+
+Review this model and interpret it.
+
+### REPLACE THIS LINE WITH YOUR CODE
+
+```{r}
+summary(model2)
+```
+
+Finally, let's use an interaction model to test whether the association between `absolute_upward_mobility` and `leave_cz` varies by `type`. In other words, this model tests if the `slopes` are different for each type of county. To add an interaction, replace the plus sign in the previous model with an asterisk.
+
+```{r}
+model3 <- lm(absolute_upward_mobility ~ type * leave_cz,
+             data = county_mobility,
+             na.action = na.exclude)
+```
+
+```{r}
+summary(model3)
+```
+
+GGplot will default to an interaction model if you add a `color = ` option to your aesthetic map. But mute the colors of your points to be able to see the different lines.
+
+```{r, error = FALSE, warning = FALSE}
+county_mobility %>%
+  ggplot(aes(x = leave_cz, y = absolute_upward_mobility,
+             color = type)) +
+  geom_point(color = "grey70") + 
+  geom_smooth(method = "lm")
+```
+
+
+# DELETE
+
+```{r}
+county_mobility <- county_mobility %>%
+  mutate(leave_cat = cut(leave_cz, 
+                         breaks = c(-Inf, .25, .35, .45, .55, .60, Inf)))
+
+predictions <- county_mobility %>%
+  mutate(pr_mobility = fitted(model3)) %>%
+  filter(!is.na(leave_cat)) %>%
+  group_by(type, leave_cat) %>%
+  summarize(mean_pr_mobility = mean(pr_mobility, na.rm=TRUE))
+
+predictions %>%
+  ggplot(aes(x = leave_cat, y = mean_pr_mobility, 
+             fill = type, label = round(mean_pr_mobility,1))) +
+  geom_col(position = "dodge") +
+  geom_text(position = position_dodge(width = 1), hjust = 1, size = 4) + 
+  coord_flip() +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        legend.text = element_text(size = 12)) +
+  labs(y = "Predicted Absolute Upward Mobility",
+       x = "Proportion of Children\nLeaving CZ",
+       title = "Predicted Mobility By Proportion of Children\nLeaving Commuting Zone") +
+  scale_fill_discrete(name = "County Type", 
+                      labels = c("Metro", "Micro", "Rural"))
+```
+
