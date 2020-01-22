@@ -1,7 +1,7 @@
 ---
 title: "Opportunity Atlas Data"
 author: "ML"
-date: "1/21/2020"
+date: "1/22/2020"
 output: pdf_document
 ---
 
@@ -13,12 +13,6 @@ Load the usual packages
 library(tidyverse)
 library(tidycensus)
 library(pander)
-```
-
-Load dataset of all county characteristics from [Opportunity Insights](https://opportunityinsights.org) 
-
-```{r}
-cty_characteristics <-read.csv("https://opportunityinsights.org/wp-content/uploads/2018/12/cty_covariates.csv")
 ```
 
 Load the dataset of college completion rates from the [Opportunity Atlas](https://opportunityatlas.org)
@@ -44,7 +38,7 @@ We started with 218 columns. We end up with 216 `rows` for each county and state
 
 # Delete
 
-```{r, echo = FALSE}
+```{r, eval = FALSE}
 college_long %>%
   filter(name=="Addison County, VT")
 ```
@@ -63,13 +57,13 @@ Let's clean up the fips codes to make it easier to eventually merge them with sh
 
 ```{r}
 college_long <- college_long %>%
-  mutate(cty = parse_number(as.character(cty))) %>% # keep numbers in fips code
+  mutate(cty = parse_number(as.character(cty))) %>% # keep numbers in fips code, but make them characters
   rename(GEOID = cty) %>% # new name = old name
   mutate(GEOID = sprintf("%05d", as.numeric(GEOID))) %>% # adds leading zeroes as necessary to make all fips codes 5 digits
   mutate(GEOID = as.character(GEOID)) # changes fips codes to characters
 ```
 
-## Merging
+## Merging Data Frame With Map Data
 
 The `tidycensus` package includes functions to get geometric shapefiles for states and counties. Let's get the county shapefiles.
 
@@ -151,7 +145,7 @@ Merge the income data and shapefiles into a data frame called `hhincome_geo`.
 hhincome_geo <- left_join(county_maps, hhincome_long, by = "GEOID")
 ```
 
-Clean up the income percentiles in a data frame called `hhincome_maps`.
+Using the merged data frame you just created, clean up the income percentiles in a data frame called `hhincome_maps`.
 
 ### REPLACE THIS LINE WITH YOUR CODE
 
@@ -186,7 +180,8 @@ That doesn't look great. Why? Let's assign each county's average income to its q
 Start by finding the quintiles.
 
 ```{r}
-quantile(hhincome$kfr_rP_gP_pall, probs = c(.2, .4, .6, .8, 1), na.rm=TRUE)
+quantile(hhincome$kfr_rP_gP_pall, probs = c(.2, .4, .6, .8, 1), 
+         na.rm=TRUE)
 ```
 
 Then use the `cut()` function to make the breaks in the data.
