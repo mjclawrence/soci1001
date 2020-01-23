@@ -68,7 +68,7 @@ How could we see plots separately for metro, micro, and rural areas (categories 
 county_mobility %>%
   ggplot(aes(x = traveltime15_2010, y = absolute_upward_mobility)) +
   geom_point() + geom_smooth(method = "lm") + 
-  facet_wrap(~type)
+  facet_grid(.~type)
 ```
 
 We might be interested in seeing the correlations between mobility and all the variables considered the "big five" predictors of mobility. How can we summarize those correlations together? The `GGally` package has some neat tools to help visualize correlations. Install and load the package.
@@ -81,7 +81,8 @@ library(GGally)
 We want to use the big five variables, so let's pull their names into a vector so we can reference them as a group.
 
 ```{r}
-big_five_vars <- c("social_capital_90", "singleparent_share2000",
+big_five_vars <- c("social_capital_90",
+                   "singleparent_share2000",
               "gini", "traveltime15_2010",
               "share_black2000")
 ```
@@ -145,9 +146,9 @@ county_mobility %>%
   ggcorr(palette = "RdBu", 
          label = TRUE,
          label_round = 1,
-         label_size = 3, # This is new; default is 4
+         label_size = 2, # This is new; default is 4
          hjust = 1, 
-         layout.exp = 3,
+         layout.exp = 4,
          method = c("pairwise", "pearson"),
          legend.position = "bottom")
 ```
@@ -157,6 +158,7 @@ Our data frame has many other variables we have not looked at yet. Explore them 
 ```{r}
 county_mobility %>%
   select(5:49, -big_five_vars, -social_capital_vars) %>%
+  filter(type == "rural") %>%
   ggcorr(palette = "RdBu", 
          label = TRUE,
          label_round = 1,
