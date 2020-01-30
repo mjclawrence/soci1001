@@ -1,0 +1,50 @@
+---
+title: "Urban vs Rural"
+author: "ML"
+date: "1/30/2020"
+output: pdf_document
+---
+
+```{r, warning = FALSE, error = FALSE, message = FALSE}
+library(tidyverse)
+library(pander)
+
+cz <- read.csv("https://raw.githubusercontent.com/mjclawrence/soci385/master/data/commuting_zones.csv")
+
+cz_subset <- cz %>%
+     select(mobility, gini, urban, hh_income, racial_seg)
+```
+
+
+```{r cor racial segregation and income}
+cor(cz_subset$hh_income, cz_subset$racial_seg, 
+    use = "complete")
+```
+
+
+
+```{r make urban a factor variable}
+cz_subset <- cz_subset %>%
+     mutate(urban = factor(urban, 
+                           levels=c("0", "1"), 
+                           labels=c("Rural", "Urban")))
+
+urban_rural_plot <- ggplot(cz_subset, aes(x = hh_income, 
+                                          y = racial_seg))
+
+urban_rural_plot + geom_point()
+```
+
+Would this association be the same in urban and rural commuting zones?
+
+```{r urban rural facets}
+urban_rural_facets <- ggplot(cz_subset, aes(x = hh_income, y = racial_seg))
+
+urban_rural_facets + geom_point(aes(color = urban)) + 
+     geom_smooth(method = lm, color = "black") + 
+     facet_grid(.~urban) + 
+     scale_color_manual(values = c("Red", "Blue")) + guides(color = FALSE) +
+     labs(x = "Median Household Income", y = "Racial Segregation",
+          title = "Rural-Urban Differences in Association Between \nMedian Household Income and Racial Segregation", 
+          subtitle = "Data from Opportunity Insights")
+```
