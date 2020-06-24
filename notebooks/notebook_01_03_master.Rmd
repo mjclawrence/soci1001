@@ -109,7 +109,7 @@ First, we need to install two packages. Packages are additional functions that s
 Here's the code to install the package. You only have to install the package once on any computer you use. Once your computer has the package installed, you can load the package with the `library()` function.
 
 ```{r load packages, warning=FALSE, error=FALSE, include=FALSE}
-#install.packages("tidyverse") # This installs the package
+install.packages("tidyverse") # This installs the package.
 library(tidyverse) # This loads the package
 ```
 
@@ -265,72 +265,3 @@ vt_plot_rnaturalinc <- ggplot(vermont, aes(x = reorder(county, rnaturalinc),
 
 vt_plot_rnaturalinc
 ```
-
-We can make further adjustments to this figure like changing the axis labels, adding a title, moving (or deleting) the legend, etc.
-
-
-```{r}
-vt_plot_rnaturalinc <- ggplot(vermont, aes(x = reorder(county, rnaturalinc), 
-                                           y = rnaturalinc,
-                                           fill = (rnaturalinc>0))) + 
-  geom_col() + coord_flip() +
-  scale_fill_manual(values = c("Red", "Forestgreen")) +
-  guides(fill = FALSE) + 
-  labs(y = "Net Natural Increase\n(Births - Deaths per 1000 Residents)",
-       x = " ",
-       title = "Net Natural Increase Rate Per County In Vermont",
-       subtitle = "US Census Bureau 2018 Population Estimates")
-
-vt_plot_rnaturalinc
-```
-
-
-```{r}
-vt_plot_rnaturalinc <- ggplot(vermont, aes(x = reorder(county, rnaturalinc), 
-                                           y = rnaturalinc,
-                                           fill = rnaturalinc,
-                                           label = round(rnaturalinc, 3))) + 
-  geom_col() + coord_flip() +
-  guides(fill = FALSE) + 
-  scale_fill_viridis_c() +
-  labs(y = "Net Natural Increase\n(Births - Deaths per 1000 Residents)",
-       x = " ",
-       title = "Net Natural Increase Rate Per County In Vermont",
-       subtitle = "US Census Bureau 2018 Population Estimates") +
-  geom_text(hjust = .5)
-
-vt_plot_rnaturalinc
-```
-
-# EXTRA
-
-```{r}
-library(tidycensus)
-
-pop_geo <- get_estimates(geography = "county",
-                        product = "components",
-                        year = 2018,
-                        geometry = TRUE,
-                        shift_geo = TRUE,
-                        output = "wide")
-
-vt_geo <- filter(pop_geo, grepl(NAME, " Vermont"))
-
-```
-
-```{r}
-map_natural_increase <- ggplot() +
-  geom_sf(data = pop_geo, aes(fill = RNATURALINC, color = RNATURALINC), lwd = 0.1) +
-  geom_sf(data = tidycensus::state_laea, fill = NA, color = "black", lwd = 0.1) +
-  geom_sf(data = tidycensus::county_laea, fill = NA, color = "black", lwd = 0.05) +
-  coord_sf(datum = NA) + scale_fill_viridis_c() + scale_color_viridis_c() +
-  guides(color = FALSE) + 
-  labs(title = "Net Natural Increase Rate Per County",
-       subtitle = "US Census Bureau 2018 Population Estimates",
-       fill = "Natural\nIncrease\nPer 1000\nResidents",
-       caption = "Data acquired with the R tidycensus package | @kyle_e_walker") +
-  theme_minimal()
-
-map_natural_increase
-```
-
